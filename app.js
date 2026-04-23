@@ -1,61 +1,49 @@
-const express = require("express");
+const express = require('express');
+const https = require('https');
 const app = express();
-const port = process.env.PORT || 3001;
 
-app.get("/", (req, res) => res.type('html').send(html));
+app.use(function(req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
 
-const server = app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.get('/ebay-price', function(req, res) {
+  var query = req.query.q;
+  if (!query) return res.json({ error: 'no query' });
+  var appId = process.env.EBAY_APP_ID || 'RoyBaibu-NIKONTRA-PRD-68f86d25c-9c75ece5';
+  var path = '/services/search/FindingService/v1?OPERATION-NAME=findItemsByKeywords&SERVICE-VERSION=1.0.0&SECURITY-APPNAME=' + appId + '&RESPONSE-DATA-FORMAT=JSON&REST-PAYLOAD&keywords=' + encodeURIComponent(query) + '&sortOrder=PricePlusShippingLowest&paginationInput.entriesPerPage=10';
+  var options = { hostname: 'svcs.ebay.com', path: path, method: 'GET' };
+  var request = https.request(options, function(response) {
+    var data = '';
+    response.on('data', function(chunk) { data += chunk; });
+    response.on('end', function() {
+      try {
+        var json = JSON.parse(data);
+        var resp = json.findItemsByKeywordsResponse;
+        var items = (resp && resp[0] && resp[0].searchResult && resp[0].searchResult[0] && resp[0].searchResult[0].item) ? resp[0].searchResult[0].item : [];
+        var prices = [];
+        for (var i = 0; i < items.length; i++) {
+          var ss = items[i].sellingStatus;
+          var pv = (ss && ss[0] && ss[0].currentPrice && ss[0].currentPrice[0]) ? parseFloat(ss[0].currentPrice[0].__value__) : 0;
+          if (pv > 0) prices.push(pv);
+        }
+        if (!prices.length) return res.json({ low: null, avg: null, high: null, count: 0 });
+        prices.sort(function(a, b) { return a - b; });
+        var avg = prices.reduce(function(s, v) { return s + v; }, 0) / prices.length;
+        res.json({ low: Math.round(prices[0]), avg: Math.round(avg), high: Math.round(prices[prices.length - 1]), count: prices.length });
+      } catch(e) { res.json({ error: e.message }); }
+    });
+  });
+  request.on('error', function(e) { res.json({ error: e.message }); });
+  request.end();
+});
 
-server.keepAliveTimeout = 120 * 1000;
-server.headersTimeout = 120 * 1000;
+app.get('/', function(req, res) {
+  res.send('Nikon proxy is running');
+});
 
-const html = `
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Hello from Render!</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <script>
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          disableForReducedMotion: true
-        });
-      }, 500);
-    </script>
-    <style>
-      @import url("https://p.typekit.net/p.css?s=1&k=vnd5zic&ht=tk&f=39475.39476.39477.39478.39479.39480.39481.39482&a=18673890&app=typekit&e=css");
-      @font-face {
-        font-family: "neo-sans";
-        src: url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff2"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("opentype");
-        font-style: normal;
-        font-weight: 700;
-      }
-      html {
-        font-family: neo-sans;
-        font-weight: 700;
-        font-size: calc(62rem / 16);
-      }
-      body {
-        background: white;
-      }
-      section {
-        border-radius: 1em;
-        padding: 1em;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        margin-right: -50%;
-        transform: translate(-50%, -50%);
-      }
-    </style>
-  </head>
-  <body>
-    <section>
-      Hello from Render!
-    </section>
-  </body>
-</html>
-`
+var port = process.env.PORT || 3000;
+app.listen(port, function() {
+  console.log('Nikon proxy listening on port ' + port);
+});
