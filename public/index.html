@@ -1,1 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nikon Tracker — themichaelcollection</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px}
+.header{background:#fff;border-bottom:1px solid #e0e0e0;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:16px;font-weight:600}
+.tabs{background:#fff;border-bottom:1px solid #e0e0e0;display:flex;padding:0 20px}
+.tab{padding:12px 16px;cursor:pointer;font-size:13px;color:#666;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500}
+.content{padding:16px 20px;max-width:1200px;margin:0 auto}
+.alert{padding:10px 16px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.alert.success{background:#EAF3DE;color:#3B6D11}
+.alert.warn{background:#FAEEDA;color:#854F0B}
+.alert.error{background:#FCEBEB;color:#A32D2D}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.kpi{background:#fff;border-radius:8px;padding:14px;border:1px solid #e8e8e8}
+.kpi-label{font-size:11px;color:#888;margin-bottom:6px}
+.kpi-val{font-size:22px;font-weight:600}
+.kpi-sub{font-size:11px;color:#aaa;margin-top:3px}
+.kpi-val.green{color:#3B6D11}.kpi-val.amber{color:#854F0B}.kpi-val.red{color:#A32D2D}
+.card{background:#fff;border-radius:10px;border:1px solid #e8e8e8;margin-bottom:16px;overflow:hidden}
+.card-header{padding:12px 16px;border-bottom:1px solid #f0f0f0;font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;display:flex;justify-content:space-between;align-items:center}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:#888;border-bottom:1px solid #f0f0f0;background:#fafafa}
+td{padding:9px 12px;border-bottom:1px solid #f5f5f5;font-size:13px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+.badge.green{background:#EAF3DE;color:#3B6D11}.badge.amber{background:#FAEEDA;color:#854F0B}
+.badge.red{background:#FCEBEB;color:#A32D2D}.badge.blue{background:#E6F1FB;color:#185FA5}.badge.gray{background:#f0f0f0;color:#666}
+button{padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;font-family:inherit}
+button:hover{background:#f5f5f5}
+button.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+button.primary:hover{background:#333}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;width:100%}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{font-size:12px;color:#888;width:80px;flex-shrink:0}
+.bar-track{flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.bar-amt{font-size:12px;font-weight:600;width:70px;text-align:right;flex-shrink:0}
+.subtabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.subtab{font-size:12px;padding:5px 12px;border:1px solid #ddd;border-radius:20px;background:none;cursor:pointer;color:#666}
+.subtab.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.status-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.status-box{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:10px;text-align:center;cursor:pointer}
+.status-box.active{border-color:#1a1a1a;background:#f9f9f9}
+.status-box .num{font-size:20px;font-weight:600}
+.status-box .lbl{font-size:11px;color:#888;margin-top:2px}
+.item-card{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:12px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:#fff;border-radius:12px;padding:24px;width:min(440px,92vw);max-height:90vh;overflow-y:auto}
+.form-group{margin-bottom:14px}
+.form-group label{font-size:12px;color:#666;display:block;margin-bottom:4px;font-weight:500}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.health-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f5f5f5}
+.health-row:last-child{border-bottom:none}
+.prog-track{width:80px;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;margin:0 12px}
+.prog-fill{height:100%;border-radius:3px}
+.prog-bar{height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Nikon Tracker <span style="font-weight:400;color:#888">— themichaelcollection</span></h1>
+  <span id="headerCount" style="font-size:12px;color:#888"></span>
+</div>
+<div id="alertBox" style="display:none;padding:10px 20px"></div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab(0)">Inventory</button>
+  <button class="tab" onclick="switchTab(1)">Opportunities</button>
+  <button class="tab" onclick="switchTab(2)">Dashboard</button>
+  <button class="tab" onclick="switchTab(3)">Strategy</button>
+</div>
+<div class="content">
+  <div id="tab0">
+    <div class="status-bar">
+      <div class="status-box active" id="sb-Listed" onclick="setStatusFilter('Listed')"><div class="num" id="cnt-Listed">0</div><div class="lbl">Listed</div></div>
+      <div class="status-box" id="sb-Draft" onclick="setStatusFilter('Draft')"><div class="num" id="cnt-Draft">0</div><div class="lbl">Draft</div></div>
+      <div class="status-box" id="sb-Sold" onclick="setStatusFilter('Sold')"><div class="num" id="cnt-Sold">0</div><div class="lbl">Sold</div></div>
+      <div class="status-box" id="sb-In Stock" onclick="setStatusFilter('In Stock')"><div class="num" id="cnt-In Stock">0</div><div class="lbl">In Stock</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="text" id="searchInput" placeholder="Search items..." style="flex:1;max-width:300px" oninput="renderInventory()">
+      <button class="primary" onclick="openAddForm()">+ Add item</button>
+    </div>
+    <div id="inventoryList"></div>
+  </div>
+  <div id="tab1" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-size:12px;color:#888" id="lastScanLabel">No scan yet</span>
+      <button class="primary" onclick="scanOpportunities()" id="scanBtn">Scan eBay now →</button>
+    </div>
+    <div id="oppList"><div style="text-align:center;color:#888;padding:3rem 0">Click "Scan eBay now" to find buying opportunities</div></div>
+  </div>
+  <div id="tab2" style="display:none">
+    <div class="subtabs">
+      <button class="subtab active" onclick="switchDashTab(0)">Overview</button>
+      <button class="subtab" onclick="switchDashTab(1)">Sales</button>
+      <button class="subtab" onclick="switchDashTab(2)">Inventory</button>
+      <button class="subtab" onclick="switchDashTab(3)">Pricing</button>
+      <button class="subtab" onclick="switchDashTab(4)">Store health</button>
+    </div>
+    <div id="dash0"></div>
+    <div id="dash1" style="display:none"></div>
+    <div id="dash2" style="display:none"></div>
+    <div id="dash3" style="display:none"></div>
+    <div id="dash4" style="display:none"></div>
+  </div>
+  <div id="tab3" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-size:12px;color:#888" id="lastReviewLabel">No review yet</span>
+      <button class="primary" onclick="runPricingReview()" id="reviewBtn">Refresh review →</button>
+    </div>
+    <div id="reviewResults"><div style="text-align:center;color:#888;padding:3rem 0">Click "Refresh review" for AI pricing recommendations</div></div>
+  </div>
+</div>
 
+<div id="modal" class="modal-bg" style="display:none">
+  <div class="modal">
+    <h3 id="modalTitle" style="font-size:16px;font-weight:600;margin-bottom:20px">Add item</h3>
+    <div class="form-group"><label>Item name</label><input type="text" id="f-name"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Listed price ($)</label><input type="number" id="f-listedPrice" step="0.01"></div>
+      <div class="form-group"><label>Sale price ($)</label><input type="number" id="f-salePrice" step="0.01"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Condition</label><select id="f-condition"><option>Mint</option><option>Good</option><option>Fair</option><option>Parts</option></select></div>
+      <div class="form-group"><label>Status</label><select id="f-status"><option>Listed</option><option>Draft</option><option>Sold</option><option>In Stock</option></select></div>
+    </div>
+    <div class="form-group"><label>Strategy</label><select id="f-strategy"><option>Quick Flip</option><option>Hold for Premium</option><option>Bundle Deal</option><option>Watching</option></select></div>
+    <div class="form-row">
+      <div class="form-group"><label>Date listed</label><input type="date" id="f-dateListed"></div>
+      <div class="form-group"><label>Date sold</label><input type="date" id="f-dateSold"></div>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea id="f-notes" rows="2"></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button onclick="closeModal()">Cancel</button>
+      <button class="primary" onclick="saveItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var STORAGE_KEY='nikon_v2';
+var currentTab=0,currentDashTab=0,statusFilter='Listed',editingId=null;
+var priceScanResults=[],priceScanRunning=false;
+var state={items:[],opportunities:[],lastScanDate:null,pricingReview:null,lastReviewDate:null,priceMemory:{}};
+
+function showAlert(msg,type){var b=document.getElementById('alertBox');b.style.display='block';b.innerHTML='<div class="alert '+type+'">'+msg+'<span style="cursor:pointer;font-weight:600;margin-left:12px" onclick="document.getElementById(\'alertBox\').style.display=\'none\'">×</span></div>';}
+
+function switchTab(i){currentTab=i;['tab0','tab1','tab2','tab3'].forEach(function(id,j){document.getElementById(id).style.display=j===i?'':'none';});document.querySelectorAll('.tab').forEach(function(t,j){t.classList.toggle('active',j===i);});if(i===2)renderDashboard();}
+function switchDashTab(i){currentDashTab=i;[0,1,2,3,4].forEach(function(j){document.getElementById('dash'+j).style.display=j===i?'':'none';});document.querySelectorAll('.subtab').forEach(function(t,j){t.classList.toggle('active',j===i);});renderDashboard();}
+function setStatusFilter(s){statusFilter=s;document.querySelectorAll('.status-box').forEach(function(b){b.classList.remove('active');});document.getElementById('sb-'+s).classList.add('active');renderInventory();}
+
+function getCounts(){var c={Listed:0,Draft:0,Sold:0,'In Stock':0};state.items.forEach(function(i){if(c[i.status]!==undefined)c[i.status]++;});return c;}
+
+function renderAll(){
+  var c=getCounts();
+  Object.keys(c).forEach(function(k){var el=document.getElementById('cnt-'+k);if(el)el.textContent=c[k];});
+  document.getElementById('headerCount').textContent=state.items.length+' items';
+  renderInventory();
+  if(currentTab===2)renderDashboard();
+}
+
+function condBadge(c){var m={Mint:'green',Good:'blue',Fair:'amber',Parts:'red'};return'<span class="badge '+(m[c]||'gray')+'">'+c+'</span>';}
+function stratBadge(s){return'<span class="badge '+(s==='Hold for Premium'?'amber':'gray')+'">'+s+'</span>';}
+
+function renderInventory(){
+  var search=document.getElementById('searchInput').value.toLowerCase();
+  var items=state.items.filter(function(i){return i.status===statusFilter&&(!search||i.name.toLowerCase().indexOf(search)>=0);});
+  var html='';
+  if(!items.length){html='<div style="text-align:center;color:#888;padding:3rem 0">No '+statusFilter.toLowerCase()+' items'+(search?' matching "'+search+'"':'')+'</div>';}
+  items.forEach(function(item){
+    html+='<div class="item-card"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;margin-bottom:6px;line-height:1.4">'+item.name+'</div>';
+    html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">'+condBadge(item.condition)+stratBadge(item.strategy)+'</div>';
+    html+='<div style="font-size:12px;color:#666">';
+    if(item.listedPrice)html+='Listed: <strong>$'+item.listedPrice+'</strong> ';
+    if(item.salePrice)html+='<span style="color:#3B6D11;font-weight:600">Sold: $'+item.salePrice+'</span> ';
+    if(item.dateSold)html+='<span style="color:#aaa;font-size:11px">'+item.dateSold+'</span>';
+    html+='</div>';
+    if(item.notes)html+='<div style="font-size:11px;color:#aaa;margin-top:4px">'+item.notes+'</div>';
+    html+='</div><div style="display:flex;gap:5px;flex-shrink:0;flex-direction:column;align-items:flex-end">';
+    html+='<button onclick="openEditForm(\''+item.id+'\')">Edit</button>';
+    if(item.status==='Draft')html+='<button onclick="moveToListed(\''+item.id+'\')" style="color:#185FA5">→ List</button>';
+    if(item.status==='Listed')html+='<button onclick="markSold(\''+item.id+'\')" style="color:#3B6D11">Sold</button>';
+    html+='<button onclick="deleteItem(\''+item.id+'\')" style="color:#A32D2D">×</button>';
+    html+='</div></div>';
+  });
+  document.getElementById('inventoryList').innerHTML=html;
+}
+
+function openAddForm(){editingId=null;document.getElementById('modalTitle').textContent='Add item';clearForm();document.getElementById('f-status').value=statusFilter;document.getElementById('modal').style.display='flex';}
+function openEditForm(id){editingId=id;var item=state.items.find(function(i){return i.id===id;});if(!item)return;document.getElementById('modalTitle').textContent='Edit item';document.getElementById('f-name').value=item.name||'';document.getElementById('f-listedPrice').value=item.listedPrice||'';document.getElementById('f-salePrice').value=item.salePrice||'';document.getElementById('f-condition').value=item.condition||'Mint';document.getElementById('f-status').value=item.status||'Listed';document.getElementById('f-strategy').value=item.strategy||'Quick Flip';document.getElementById('f-dateListed').value=item.dateListed||'';document.getElementById('f-dateSold').value=item.dateSold||'';document.getElementById('f-notes').value=item.notes||'';document.getElementById('modal').style.display='flex';}
+function clearForm(){['f-name','f-listedPrice','f-salePrice','f-dateListed','f-dateSold','f-notes'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('f-condition').value='Mint';document.getElementById('f-strategy').value='Quick Flip';}
+function closeModal(){document.getElementById('modal').style.display='none';}
+function saveItem(){var name=document.getElementById('f-name').value.trim();if(!name)return;var item={id:editingId||Date.now().toString(),name:name,listedPrice:document.getElementById('f-listedPrice').value,salePrice:document.getElementById('f-salePrice').value,condition:document.getElementById('f-condition').value,status:document.getElementById('f-status').value,strategy:document.getElementById('f-strategy').value,dateListed:document.getElementById('f-dateListed').value,dateSold:document.getElementById('f-dateSold').value,notes:document.getElementById('f-notes').value};if(editingId){state.items=state.items.map(function(i){return i.id===editingId?item:i;});}else{state.items.push(item);}saveState();closeModal();renderAll();}
+function deleteItem(id){if(!confirm('Delete this item?'))return;state.items=state.items.filter(function(i){return i.id!==id;});saveState();renderAll();}
+
+function markSold(id){
+  var price=prompt('Enter sale price:');if(price===null)return;
+  var salePrice=parseFloat(price);
+  state.items=state.items.map(function(i){
+    if(i.id!==id)return i;
+    var key=getPriceMemoryKey(i.name);
+    if(!state.priceMemory[key])state.priceMemory[key]=[];
+    state.priceMemory[key].push({name:i.name,price:salePrice,date:new Date().toISOString().split('T')[0]});
+    if(state.priceMemory[key].length>20)state.priceMemory[key].shift();
+    return Object.assign({},i,{status:'Sold',salePrice:price,dateSold:new Date().toISOString().split('T')[0]});
+  });
+  saveState();renderAll();
+}
+function moveToListed(id){state.items=state.items.map(function(i){return i.id===id?Object.assign({},i,{status:'Listed'}):i;});saveState();renderAll();}
+
+function getPriceMemoryKey(name){var t=name.toUpperCase();var mm=name.match(/([A-Z]{1,3}-?\d{1,3}[A-Za-z]?)/);var model=mm?mm[1].toUpperCase():null;var sz=name.match(/(\d+mm)/);var size=sz?sz[1]:null;if(t.indexOf('FILTER')>=0&&size)return'FILTER_'+size;if((t.indexOf('MOTOR DRIVE')>=0||t.indexOf('MD-')>=0||t.indexOf('F-36')>=0)&&model)return'MOTOR_'+model;if((t.indexOf('BATTERY')>=0||t.indexOf('MB-')>=0)&&model)return'BATTERY_'+model;if((t.indexOf('DATA BACK')>=0||t.indexOf('MF-')>=0)&&model)return'DATABACK_'+model;if((t.indexOf('NIKKOR')>=0||t.indexOf('LENS')>=0)&&size)return'LENS_'+size;if(t.indexOf('FM2/T')>=0||t.indexOf('FM2T')>=0)return'CAMERA_FM2T';if(t.indexOf('F3/T')>=0)return'CAMERA_F3T';if(t.indexOf('FM3A')>=0)return'CAMERA_FM3A';if(t.indexOf('FM2')>=0)return'CAMERA_FM2';if(t.indexOf('F2AS')>=0||t.indexOf('F2A')>=0)return'CAMERA_F2A';if(t.indexOf('F2S')>=0)return'CAMERA_F2S';if(t.indexOf('F2')>=0)return'CAMERA_F2';if(t.indexOf('F3P')>=0)return'CAMERA_F3P';if(t.indexOf('F3')>=0)return'CAMERA_F3';if(t.indexOf('F4E')>=0||t.indexOf('F4S')>=0||t.indexOf('F4')>=0)return'CAMERA_F4';if(t.indexOf('F5')>=0)return'CAMERA_F5';if(t.indexOf('FE2')>=0)return'CAMERA_FE2';if(t.indexOf('FE')>=0)return'CAMERA_FE';if(t.indexOf('FA')>=0)return'CAMERA_FA';if(model)return'MISC_'+model;return'OTHER';}
+function getMyAvgPrice(name){var key=getPriceMemoryKey(name);var mem=state.priceMemory&&state.priceMemory[key];if(!mem||!mem.length)return null;return Math.round(mem.reduce(function(s,m){return s+m.price;},0)/mem.length);}
+
+function buildSearchQuery(name){var t=name.toUpperCase();var mm=name.match(/(\d+\.?\d*mm)/);var fm=name.match(/f\/(\d+\.?\d*)/);var mo=name.match(/Nikon\s+([A-Z]{1,3}-?\d{1,3}[A-Za-z]?)/);var model=mo?mo[1]:null;var sz=name.match(/(\d+mm)/);var size=sz?sz[1]:null;if(t.indexOf('FILTER')>=0&&size){var ft='';if(t.indexOf('L37')>=0)ft='L37C';else if(t.indexOf('Y48')>=0)ft='Y48';else if(t.indexOf('R60')>=0)ft='R60';else if(t.indexOf('O56')>=0)ft='O56';else if(t.indexOf('B2')>=0)ft='B2';else if(t.indexOf('A12')>=0)ft='A12';else if(t.indexOf('POLARIZ')>=0)ft='polarizing';else if(t.indexOf('NC')>=0)ft='NC UV';else if(t.indexOf('SOFT')>=0)ft='soft focus';else if(t.indexOf('ND4')>=0)ft='ND4X';else if(t.indexOf('L1')>=0)ft='L1BC skylight';return'Nikon '+size+' '+(ft||'filter');}if((t.indexOf('NIKKOR')>=0||t.indexOf('LENS')>=0)&&mm&&fm)return'Nikon Nikkor '+mm[1]+' f/'+fm[1];if(model){if(t.indexOf('MOTOR DRIVE')>=0||t.indexOf('MD-')>=0||t.indexOf('F-36')>=0)return'Nikon '+model+' motor drive';if(t.indexOf('BATTERY')>=0||t.indexOf('MB-')>=0)return'Nikon '+model+' battery pack';if(t.indexOf('DATA BACK')>=0||t.indexOf('MF-')>=0)return'Nikon '+model+' data back';return'Nikon '+model;}return name.replace(/\[.*?\]/g,'').replace(/\*/g,'').trim().split(/\s+/).slice(0,5).join(' ');}
+
+function scanOpportunities(){
+  document.getElementById('scanBtn').disabled=true;document.getElementById('scanBtn').textContent='Scanning...';
+  document.getElementById('oppList').innerHTML='<div style="text-align:center;color:#888;padding:2rem">Finding opportunities...</div>';
+  var listed=state.items.filter(function(i){return i.status==='Listed';});
+  var sold=state.items.filter(function(i){return i.status==='Sold'&&i.salePrice;});
+  var soldSum=sold.slice(0,20).map(function(i){return i.name+': $'+i.salePrice;}).join('\n');
+  var prompt='Vintage Nikon eBay expert. My store: themichaelcollection.\nLISTED:\n'+listed.slice(0,15).map(function(i){return i.name+(i.listedPrice?' ($'+i.listedPrice+')':'');}).join('\n')+'\nSOLD HISTORY:\n'+(soldSum||'none')+'\n\nFind 5 BUYING OPPORTUNITIES 20%+ below market.\nJSON only:[{"item":"name","listingPrice":0,"marketPrice":0,"discountPct":0,"reason":"why","urgency":"High/Medium/Low"}]';
+  fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,system:'You are a vintage Nikon eBay market expert. Respond only in valid JSON.'})})
+    .then(function(r){return r.json();}).then(function(d){
+      var ops=JSON.parse((d.text||'[]').replace(/```json|```/g,'').trim());
+      state.opportunities=ops;state.lastScanDate=new Date().toDateString();saveState();
+      showAlert('Found '+ops.length+' buying opportunities!','success');renderOpportunities();
+    }).catch(function(){showAlert('Scan failed — try again.','error');})
+    .finally(function(){document.getElementById('scanBtn').disabled=false;document.getElementById('scanBtn').textContent='Scan eBay now →';});
+}
+
+function renderOpportunities(){
+  if(state.lastScanDate)document.getElementById('lastScanLabel').textContent='Last scan: '+state.lastScanDate;
+  var ops=state.opportunities||[];
+  if(!ops.length){document.getElementById('oppList').innerHTML='<div style="text-align:center;color:#888;padding:3rem 0">No opportunities yet</div>';return;}
+  var html='';
+  ops.forEach(function(o){
+    html+='<div class="card" style="padding:14px;'+(o.urgency==='High'?'border-color:#F0997B':'')+'"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:600">'+o.item+'</span><span class="badge '+(o.urgency==='High'?'red':o.urgency==='Medium'?'amber':'gray')+'">'+o.urgency+'</span></div>';
+    html+='<div style="display:flex;gap:16px;font-size:13px;margin-bottom:6px"><span>Listed: <strong style="color:#3B6D11">$'+o.listingPrice+'</strong></span><span>Market: <strong>$'+o.marketPrice+'</strong></span><span style="color:#3B6D11;font-weight:600">'+o.discountPct+'% below</span></div>';
+    html+='<div style="font-size:12px;color:#888">'+o.reason+'</div></div>';
+  });
+  document.getElementById('oppList').innerHTML=html;
+}
+
+function startPriceScan(){
+  var listed=state.items.filter(function(i){return i.status==='Listed';});
+  priceScanResults=[];priceScanRunning=true;renderPricingTab();
+  var idx=0;
+  function next(){
+    if(idx>=listed.length){priceScanRunning=false;renderPricingTab();return;}
+    var item=listed[idx];var yourPrice=item.listedPrice?parseFloat(item.listedPrice):null;var myAvg=getMyAvgPrice(item.name);
+    fetch('/ebay-price?q='+encodeURIComponent(buildSearchQuery(item.name)))
+      .then(function(r){return r.json();}).then(function(pd){
+        var ebayLow=null,ebayAvg=null,ebayHigh=null,action='NODATA',diff=null,myDiff=null;
+        if(pd&&pd.avg!==null&&pd.count>0){ebayLow=pd.low;ebayAvg=pd.avg;ebayHigh=pd.high;if(!yourPrice){action='SET PRICE';}else{var pct=Math.round(((yourPrice-pd.avg)/pd.avg)*100);diff=pct;action=pct<-20?'RAISE':pct>20?'LOWER':'OK';}}
+        if(myAvg&&yourPrice){var mp=Math.round(((yourPrice-myAvg)/myAvg)*100);myDiff=mp;if(mp<-15)action='RAISE';else if(mp>25)action='LOWER';else if(action==='NODATA')action='OK';}
+        priceScanResults.push({name:item.name,yourPrice:yourPrice?yourPrice.toFixed(0):null,ebayLow:ebayLow,ebayAvg:ebayAvg,ebayHigh:ebayHigh,myAvg:myAvg,diff:diff,myDiff:myDiff,action:action});
+        idx++;renderPricingTab();setTimeout(next,250);
+      }).catch(function(){
+        var action2='NODATA',myDiff2=null;
+        if(myAvg&&yourPrice){var p2=Math.round(((yourPrice-myAvg)/myAvg)*100);myDiff2=p2;action2=p2<-15?'RAISE':p2>25?'LOWER':'OK';}
+        priceScanResults.push({name:item.name,yourPrice:item.listedPrice||null,ebayLow:null,ebayAvg:null,ebayHigh:null,myAvg:myAvg,diff:null,myDiff:myDiff2,action:action2});
+        idx++;renderPricingTab();setTimeout(next,250);
+      });
+  }
+  next();
+}
+
+function renderDashboard(){if(currentDashTab===0)renderOverviewTab();else if(currentDashTab===1)renderSalesTab();else if(currentDashTab===2)renderInventoryTab();else if(currentDashTab===3)renderPricingTab();else if(currentDashTab===4)renderHealthTab();}
+
+function renderOverviewTab(){
+  var sold=state.items.filter(function(i){return i.status==='Sold';});
+  var totalRev=sold.reduce(function(s,i){return s+parseFloat(i.salePrice||0);},0);
+  var listedVal=state.items.filter(function(i){return i.status==='Listed';}).reduce(function(s,i){return s+parseFloat(i.listedPrice||0);},0);
+  var c=getCounts();
+  var html='<div class="kpi-grid">';
+  html+='<div class="kpi"><div class="kpi-label">Total revenue</div><div class="kpi-val green">$'+totalRev.toLocaleString('en-US',{maximumFractionDigits:0})+'</div><div class="kpi-sub">'+c.Sold+' orders since 2020</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Avg sale price</div><div class="kpi-val">$'+(sold.length?(totalRev/sold.length).toFixed(0):'—')+'</div><div class="kpi-sub">per order</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Active listings</div><div class="kpi-val">'+c.Listed+'</div><div class="kpi-sub">$'+listedVal.toLocaleString('en-US',{maximumFractionDigits:0})+' value</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Drafts ready</div><div class="kpi-val amber">'+c.Draft+'</div><div class="kpi-sub">$18,664 potential</div></div>';
+  html+='</div>';
+  var yearly={};
+  sold.forEach(function(i){if(!i.dateSold)return;var y=i.dateSold.slice(0,4);if(!yearly[y])yearly[y]={rev:0,cnt:0};yearly[y].rev+=parseFloat(i.salePrice||0);yearly[y].cnt++;});
+  var years=Object.keys(yearly).sort().reverse();
+  var maxY=years.reduce(function(mx,y){return Math.max(mx,yearly[y].rev);},0);
+  html+='<div class="card"><div class="card-header">Annual revenue</div><div style="padding:16px">';
+  years.forEach(function(y){var pct=Math.round(yearly[y].rev/maxY*100);html+='<div class="bar-row"><span class="bar-label">'+y+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:#185FA5"></div></div><span class="bar-amt">$'+Math.round(yearly[y].rev).toLocaleString()+' ('+yearly[y].cnt+')</span></div>';});
+  html+='</div></div>';
+  var monthly={};
+  sold.forEach(function(i){if(!i.dateSold)return;var m=i.dateSold.slice(0,7);if(!monthly[m])monthly[m]={rev:0,cnt:0};monthly[m].rev+=parseFloat(i.salePrice||0);monthly[m].cnt++;});
+  var months=Object.keys(monthly).sort().reverse().slice(0,12);
+  var maxM=months.reduce(function(mx,m){return Math.max(mx,monthly[m].rev);},0);
+  html+='<div class="card"><div class="card-header">Monthly revenue (last 12 months)</div><div style="padding:16px">';
+  months.forEach(function(m){var pct=Math.round(monthly[m].rev/maxM*100);html+='<div class="bar-row"><span class="bar-label">'+m+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:#0F6E56"></div></div><span class="bar-amt">$'+Math.round(monthly[m].rev).toLocaleString()+'</span></div>';});
+  html+='</div></div>';
+  document.getElementById('dash0').innerHTML=html;
+}
+
+function renderSalesTab(){
+  var sold=state.items.filter(function(i){return i.status==='Sold';}).sort(function(a,b){return b.dateSold>a.dateSold?1:-1;});
+  var totalRev=sold.reduce(function(s,i){return s+parseFloat(i.salePrice||0);},0);
+  var html='<div class="kpi-grid">';
+  html+='<div class="kpi"><div class="kpi-label">Total revenue</div><div class="kpi-val green">$'+totalRev.toLocaleString('en-US',{maximumFractionDigits:0})+'</div><div class="kpi-sub">all time</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Total orders</div><div class="kpi-val">'+sold.length+'</div><div class="kpi-sub">Nov 2020 → today</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Avg sale price</div><div class="kpi-val">$'+(sold.length?(totalRev/sold.length).toFixed(0):'—')+'</div><div class="kpi-sub">per order</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Best sale</div><div class="kpi-val green">$3,200</div><div class="kpi-sub">F2/T No Name</div></div>';
+  html+='</div>';
+  html+='<div class="card"><div class="card-header">All '+sold.length+' sold orders</div><div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Item</th><th>Sale price</th><th>Date</th></tr></thead><tbody>';
+  sold.forEach(function(item,i){
+    var price=parseFloat(item.salePrice||0);
+    var pc=price>=1000?'color:#3B6D11;font-weight:700':price>=500?'color:#185FA5;font-weight:600':'';
+    html+='<tr><td style="color:#aaa;font-size:11px">'+(i+1)+'</td><td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.name.slice(0,60)+'</td><td style="'+pc+'">$'+price.toLocaleString('en-US',{minimumFractionDigits:2})+'</td><td style="color:#888;font-size:12px">'+item.dateSold+'</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+  document.getElementById('dash1').innerHTML=html;
+}
+
+function renderInventoryTab(){
+  var c=getCounts();
+  var html='<div class="kpi-grid">';
+  [{l:'Listed',v:c.Listed,s:'items live'},{l:'Drafts',v:c.Draft,s:'$18,664 potential',a:true},{l:'Missing price',v:'2',s:'MD-14, 24mm AIS',a:true},{l:'Ultra-rare',v:'4',s:'F3H, Lapita, Dog, Champagne',g:true}].forEach(function(k){html+='<div class="kpi"><div class="kpi-label">'+k.l+'</div><div class="kpi-val'+(k.g?' green':k.a?' amber':'')+'">'+k.v+'</div><div class="kpi-sub">'+k.s+'</div></div>';});
+  html+='</div>';
+  html+='<div class="card"><div class="card-header">By category</div><div style="overflow-x:auto"><table><thead><tr><th>Category</th><th>Listed</th><th>Draft</th><th>Avg price</th><th>Total value</th></tr></thead><tbody>';
+  [['Filters','47','0','$37','$1,741'],['Motor drives','9','3','$194','$1,746'],['Battery packs','9','0','$104','$936'],['Data backs','5','0','$102','$510'],['Cameras (rare)','0','5','$3,686','$18,430'],['Lenses','2','0','$292','$584'],['Flash/accessories','3','0','$88','$264']].forEach(function(r){html+='<tr>'+r.map(function(c,i){return'<td style="'+(i===0?'font-weight:500':'color:#666')+'">'+c+'</td>';}).join('')+'</tr>';});
+  html+='</tbody></table></div></div>';
+  document.getElementById('dash2').innerHTML=html;
+}
+
+function renderPricingTab(){
+  var listed=state.items.filter(function(i){return i.status==='Listed';});
+  var memSize=Object.keys(state.priceMemory||{}).length;
+  var html='<div class="kpi-grid">';
+  [{l:'Median price',v:'$29',s:'driven by filters'},{l:'Mean price',v:'$126',s:'lifted by motors'},{l:'Price memory',v:memSize+' keys',s:'your personal benchmarks',g:true},{l:'Missing price',v:'2 items',s:'MD-14, 24mm AIS',a:true}].forEach(function(k){html+='<div class="kpi"><div class="kpi-label">'+k.l+'</div><div class="kpi-val'+(k.g?' green':k.a?' amber':'')+'">'+k.v+'</div><div class="kpi-sub">'+k.s+'</div></div>';});
+  html+='</div>';
+  html+='<div class="card"><div class="card-header"><span>Live eBay price check — '+listed.length+' items</span>';
+  if(priceScanRunning){html+='<span style="font-size:12px;color:#888">Scanning '+priceScanResults.length+'/'+listed.length+'...</span>';}
+  else{html+='<button class="primary" onclick="startPriceScan()">Scan all prices →</button>';}
+  html+='</div>';
+  if(priceScanResults.length===0&&!priceScanRunning){html+='<div style="text-align:center;color:#888;padding:3rem 0">Click "Scan all prices" — uses live eBay data + your personal price memory</div>';}
+  else{
+    if(priceScanRunning){var pct=Math.round(priceScanResults.length/Math.max(1,listed.length)*100);html+='<div style="padding:12px 16px"><div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%;background:#185FA5"></div></div><div style="font-size:11px;color:#aaa;text-align:center;margin-top:4px">'+priceScanResults.length+' of '+listed.length+' scanned</div></div>';}
+    html+='<div style="overflow-x:auto"><table><thead><tr><th style="width:30%">Item</th><th>Your price</th><th style="color:#185FA5">My avg</th><th>eBay low</th><th>eBay avg</th><th>eBay high</th><th>vs eBay</th><th>vs Mine</th><th>Action</th></tr></thead><tbody>';
+    priceScanResults.forEach(function(r){
+      var ac=r.action==='RAISE'?'green':r.action==='LOWER'?'red':'gray';
+      html+='<tr><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+r.name+'">'+r.name.replace(/\[.*?\]/g,'').trim().slice(0,38)+'</td>';
+      html+='<td>'+(r.yourPrice?'$'+r.yourPrice:'—')+'</td>';
+      html+='<td style="font-weight:600;color:#185FA5">'+(r.myAvg?'$'+r.myAvg:'—')+'</td>';
+      html+='<td>'+(r.ebayLow?'$'+r.ebayLow:'—')+'</td>';
+      html+='<td>'+(r.ebayAvg?'$'+r.ebayAvg:'—')+'</td>';
+      html+='<td>'+(r.ebayHigh?'$'+r.ebayHigh:'—')+'</td>';
+      html+='<td style="'+(r.diff>0?'color:#3B6D11':r.diff<0?'color:#A32D2D':'color:#aaa')+'">'+(r.diff!==null?(r.diff>0?'+':'')+r.diff+'%':'—')+'</td>';
+      html+='<td style="'+(r.myDiff>0?'color:#3B6D11':r.myDiff<0?'color:#A32D2D':'color:#aaa')+'">'+(r.myDiff!==null?(r.myDiff>0?'+':'')+r.myDiff+'%':'—')+'</td>';
+      html+='<td><span class="badge '+ac+'">'+r.action+'</span></td></tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+  html+='</div>';
+  document.getElementById('dash3').innerHTML=html;
+}
+
+function renderHealthTab(){
+  var html='<div class="card"><div class="card-header">Health indicators</div>';
+  [{l:'Sell-through rate',v:'10.3%',pct:10,c:'#BA7517',b:'Low',bc:'#FAEEDA',bt:'#854F0B'},{l:'Listings with price',v:'97%',pct:97,c:'#1D9E75',b:'Good',bc:'#EAF3DE',bt:'#3B6D11'},{l:'Draft conversion',v:'91%',pct:91,c:'#1D9E75',b:'Good',bc:'#EAF3DE',bt:'#3B6D11'},{l:'Revenue concentration',v:'47%',pct:47,c:'#BA7517',b:'Watch',bc:'#FAEEDA',bt:'#854F0B'},{l:'High-value drafts',v:'4 pieces',pct:100,c:'#1D9E75',b:'Strong',bc:'#EAF3DE',bt:'#3B6D11'},{l:'Price memory depth',v:'87 sales',pct:87,c:'#185FA5',b:'Rich',bc:'#E6F1FB',bt:'#185FA5'}].forEach(function(r,i){
+    html+='<div class="health-row"><span style="font-size:13px;flex:1">'+r.l+'</span><div style="display:flex;align-items:center;gap:10px;flex-shrink:0"><div class="prog-track"><div class="prog-fill" style="width:'+r.pct+'%;background:'+r.c+'"></div></div><span style="font-size:13px;font-weight:600;width:60px;text-align:right">'+r.v+'</span><span class="badge" style="background:'+r.bc+';color:'+r.bt+';width:50px;text-align:center">'+r.b+'</span></div></div>';
+  });
+  html+='</div>';
+  html+='<div class="card"><div class="card-header">Action items</div><table><thead><tr><th>Issue</th><th>Impact</th></tr></thead><tbody>';
+  [{i:'MD-14 & 24mm AIS have no price set',a:true,im:'Medium'},{i:'4 ultra-rare cameras still in drafts',g:true,im:'Opportunity'},{i:'Low sell-through on filters (10%)',a:true,im:'Medium'},{i:'Motor drives sell best — source more?',g:true,im:'Opportunity'}].forEach(function(r){html+='<tr><td>'+r.i+'</td><td><span class="badge '+(r.g?'green':'amber')+'">'+r.im+'</span></td></tr>';});
+  html+='</tbody></table></div>';
+  document.getElementById('dash4').innerHTML=html;
+}
+
+function runPricingReview(){
+  var listed=state.items.filter(function(i){return i.status==='Listed'&&i.listedPrice;});
+  var sold=state.items.filter(function(i){return i.status==='Sold'&&i.salePrice;});
+  document.getElementById('reviewBtn').disabled=true;document.getElementById('reviewBtn').textContent='Analyzing...';
+  var prompt='Vintage Nikon eBay weekly pricing review.\nLISTED:\n'+listed.slice(0,20).map(function(i){return i.name+':$'+i.listedPrice;}).join('\n')+'\nSOLD (recent):\n'+sold.slice(0,15).map(function(i){return i.name+':$'+i.salePrice;}).join('\n')+'\nFor each listed item recommend RAISE/LOWER/HOLD with price and reason. Also 2 market observations.\nJSON:{"recommendations":[{"itemName":"short name","action":"RAISE/LOWER/HOLD","suggestedPrice":0,"reason":"brief"}],"marketObservations":["obs1","obs2"]}';
+  fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,system:'You are a vintage Nikon eBay pricing strategist. Respond only in valid JSON.'})})
+    .then(function(r){return r.json();}).then(function(d){
+      var review=JSON.parse((d.text||'{}').replace(/```json|```/g,'').trim());
+      state.pricingReview=review;state.lastReviewDate=new Date().toDateString();saveState();renderStrategy();
+    }).catch(function(){document.getElementById('reviewResults').innerHTML='<div style="color:#A32D2D;padding:1rem">Review failed.</div>';})
+    .finally(function(){document.getElementById('reviewBtn').disabled=false;document.getElementById('reviewBtn').textContent='Refresh review →';});
+}
+
+function renderStrategy(){
+  if(state.lastReviewDate)document.getElementById('lastReviewLabel').textContent='Last review: '+state.lastReviewDate;
+  var review=state.pricingReview;if(!review||!review.recommendations||!review.recommendations.length)return;
+  var html='';
+  if(review.marketObservations&&review.marketObservations.length){html+='<div style="background:#E6F1FB;border-radius:8px;padding:12px 16px;margin-bottom:14px"><div style="font-size:12px;font-weight:600;color:#185FA5;margin-bottom:6px">Market observations</div>';review.marketObservations.forEach(function(o){html+='<div style="font-size:13px;color:#185FA5;margin-bottom:2px">· '+o+'</div>';});html+='</div>';}
+  review.recommendations.forEach(function(r){var ac=r.action==='RAISE'?'green':r.action==='LOWER'?'red':'gray';html+='<div style="background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div style="font-weight:600;font-size:13px;margin-bottom:3px">'+r.itemName+'</div><div style="font-size:12px;color:#888">'+r.reason+'</div></div><div style="text-align:right;flex-shrink:0"><span class="badge '+ac+'">'+r.action+'</span>'+(r.suggestedPrice?'<div style="font-size:13px;font-weight:600;margin-top:3px">$'+r.suggestedPrice+'</div>':'')+'</div></div>';});
+  document.getElementById('reviewResults').innerHTML=html;
+}
+
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}}
+
+function loadState(){
+  try{var s=localStorage.getItem(STORAGE_KEY);if(s){state=JSON.parse(s);}}catch(e){}
+  if(!state.items||!state.items.length){
+    // Fetch seed data from server
+    fetch('/api/seed').then(function(r){return r.json();}).then(function(d){
+      state.items=d.items||[];
+      state.priceMemory=d.priceMemory||{};
+      saveState();renderAll();
+    }).catch(function(){renderAll();});
+  } else {
+    renderAll();
+  }
+}
+
+loadState();
+</script>
+</body>
+</html>
